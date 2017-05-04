@@ -14,6 +14,7 @@ import com.dropbox.core.v2.DbxClientV2
 import com.dropbox.core.v2.files.FileMetadata
 import com.dropbox.core.v2.files.ListFolderResult
 import java.io.File
+import java.io.FileReader
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -29,6 +30,9 @@ class MainActivity : AppCompatActivity() {
         val listView = this.findViewById(R.id.listView) as ListView
         this.adapter = DropboxListAdapter(this, android.R.layout.simple_list_item_2, this.list)
         listView.adapter = this.adapter!!
+        listView.setOnItemClickListener { parent, view, position, id ->
+            this.downloadData(this.list[position])
+        }
     }
 
     override fun onResume() {
@@ -104,6 +108,31 @@ class MainActivity : AppCompatActivity() {
 
         }).execute(file.absolutePath, "/${filename}")
     }
+
+    private fun downloadData(fileMetadata: FileMetadata) {
+        val client = dropboxClient
+        if (client == null) {
+            this.login()
+            return
+        }
+
+        val file = File.createTempFile(fileMetadata.name, null, this.cacheDir)
+
+        DownloadFileAsyncTask(client, object : DownloadFileAsyncTask.Callback {
+
+            override fun onDataDownloaded(result: File) {
+                FileReader(result).use {
+                    Toast.makeText(this@MainActivity, it.readText(), Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onError(e: Exception?) {
+                Toast.makeText(this@MainActivity, "Fail to download", Toast.LENGTH_SHORT).show()
+            }
+
+        }).execute("/${fileMetadata.name}", file.absolutePath)
+    }
+
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         this.menuInflater.inflate(R.menu.main, menu)
