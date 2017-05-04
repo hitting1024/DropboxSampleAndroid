@@ -3,6 +3,7 @@ package jp.hitting.dropboxsampleandroid
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.text.format.DateFormat
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ListView
@@ -13,6 +14,10 @@ import com.dropbox.core.http.OkHttp3Requestor
 import com.dropbox.core.v2.DbxClientV2
 import com.dropbox.core.v2.files.FileMetadata
 import com.dropbox.core.v2.files.ListFolderResult
+import com.dropbox.core.v2.files.WriteMode
+import java.io.File
+import java.io.FileInputStream
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -79,6 +84,30 @@ class MainActivity : AppCompatActivity() {
         }).execute("")
     }
 
+    private fun uploadData() {
+        val client = dropboxClient
+        if (client == null) {
+            this.login()
+            return
+        }
+
+        val filename = "${DateFormat.format("yyyyMMdd-HHmmss", Date())}.txt"
+        val file = File.createTempFile("temp", "txt", this.cacheDir)
+        file.writeText("test data: ${filename}")
+
+        FileUploadAsyncTask(client, object : FileUploadAsyncTask.Callback {
+
+            override fun onDataUploaded(result: FileMetadata) {
+                this@MainActivity.loadData()
+            }
+
+            override fun onError(e: Exception?) {
+                Toast.makeText(this@MainActivity, "Fail to upload", Toast.LENGTH_SHORT).show()
+            }
+
+        }).execute(file.absolutePath, "/${filename}")
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         this.menuInflater.inflate(R.menu.main, menu)
         return true
@@ -88,6 +117,7 @@ class MainActivity : AppCompatActivity() {
         when (item?.itemId) {
             R.id.load -> this.loadData()
             R.id.logout -> this.logout()
+            R.id.upload -> this.uploadData()
         }
         return super.onOptionsItemSelected(item)
     }
@@ -137,6 +167,50 @@ class MainActivity : AppCompatActivity() {
 
             if (this.exception == null && result != null) {
                 this.callback.onDataLoaded(result)
+            } else {
+                this.callback.onError(this.exception)
+            }
+        }
+
+    }
+
+    private class FileUploadAsyncTask(private val dropboxClient: DbxClientV2, private val callback: Callback) : AsyncTask<String, Void, FileMetadata>() {
+
+        interface Callback {
+            fun onDataUploaded(result: FileMetadata)
+            fun onError(e: Exception?)
+        }
+
+        private var exception: Exception? = null
+
+        /**
+         * @param params 0: uploading file path in local, 1: path in dropbox
+         */
+        override fun doInBackground(vararg params: String?): FileMetadata? {
+            val localPath = params[0]
+            val targetPath = params[1]
+
+            if (localPath == null) {
+                return null
+            }
+
+            FileInputStream(localPath).use {
+                try {
+                    return this.dropboxClient.files().uploadBuilder(targetPath)
+                            .withMode(WriteMode.OVERWRITE)
+                            .uploadAndFinish(it)
+                } catch (e: Exception) {
+                    this.exception = e
+                    return null
+                }
+            }
+        }
+
+        override fun onPostExecute(result: FileMetadata?) {
+            super.onPostExecute(result)
+
+            if (this.exception == null && result != null) {
+                this.callback.onDataUploaded(result)
             } else {
                 this.callback.onError(this.exception)
             }

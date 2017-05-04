@@ -6,6 +6,10 @@
         android:title="Load" />
 
     <item
+        android:id="@+id/upload"
+        android:title="Upload" />
+
+    <item
         android:id="@+id/logout"
         android:title="Logout" />
 
