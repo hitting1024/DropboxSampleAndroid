@@ -92,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         val file = File.createTempFile("temp", "txt", this.cacheDir)
         file.writeText("test data: ${filename}")
 
-        FileUploadAsyncTask(client, object : FileUploadAsyncTask.Callback {
+        UploadFileAsyncTask(client, object : UploadFileAsyncTask.Callback {
 
             override fun onDataUploaded(result: FileMetadata) {
                 this@MainActivity.loadData()

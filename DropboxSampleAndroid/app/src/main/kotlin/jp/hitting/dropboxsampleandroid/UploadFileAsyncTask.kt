@@ -6,7 +6,7 @@ import com.dropbox.core.v2.files.FileMetadata
 import com.dropbox.core.v2.files.WriteMode
 import java.io.FileInputStream
 
-class FileUploadAsyncTask(private val dropboxClient: DbxClientV2, private val callback: Callback) : AsyncTask<String, Void, FileMetadata>() {
+class UploadFileAsyncTask(private val dropboxClient: DbxClientV2, private val callback: Callback) : AsyncTask<String, Void, FileMetadata>() {
 
     interface Callback {
         fun onDataUploaded(result: FileMetadata)
