@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        val pref = this.getSharedPreferences("DropboxSampleAndroid", MODE_PRIVATE)
+        val pref = this.getSharedPreferences(PrefName, MODE_PRIVATE)
         var accessToken = pref.getString(DropboxAccessTokenKey, null)
         if (accessToken == null) {
             accessToken = Auth.getOAuth2Token()
@@ -47,6 +47,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun login() {
         Auth.startOAuth2Authentication(this, this.getString(R.string.dropbox_app_key))
+    }
+
+    private fun logout() {
+        dropboxClient = null
+        val pref = this.getSharedPreferences(PrefName, MODE_PRIVATE)
+        pref.edit().remove(DropboxAccessTokenKey).apply()
     }
 
     private fun loadData() {
@@ -81,12 +87,14 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item?.itemId) {
             R.id.load -> this.loadData()
+            R.id.logout -> this.logout()
         }
         return super.onOptionsItemSelected(item)
     }
 
     companion object {
 
+        val PrefName = "DropboxSampleAndroid"
         val DropboxAccessTokenKey = "DropboxAccessTokenKey"
 
         var dropboxClient: DbxClientV2? = null
