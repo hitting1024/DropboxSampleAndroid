@@ -17,11 +17,16 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (dropboxClient == null) {
-            val accessToken = Auth.getOAuth2Token()
+        val pref = this.getSharedPreferences("DropboxSampleAndroid", MODE_PRIVATE)
+        var accessToken = pref.getString(DropboxAccessTokenKey, null)
+        if (accessToken == null) {
+            accessToken = Auth.getOAuth2Token()
             if (accessToken != null) {
+                pref.edit().putString(DropboxAccessTokenKey, accessToken).apply()
                 initDropboxClient(accessToken)
             }
+        } else {
+            initDropboxClient(accessToken)
         }
     }
 
@@ -30,6 +35,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+
+        val DropboxAccessTokenKey = "DropboxAccessTokenKey"
 
         var dropboxClient: DbxClientV2? = null
 
